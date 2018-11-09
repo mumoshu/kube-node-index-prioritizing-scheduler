@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+eval $(minikube docker-env)
+
+docker build . -t mumoshu/kube-n-pods-per-node-scheduler:canary

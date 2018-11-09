@@ -6,9 +6,9 @@ ENV GOARCH=amd64
 ARG VERSION=0.0.1
 
 # build
-WORKDIR /go/src/k8s-scheduler-extender-example
+WORKDIR /go/src/github.com/everpeace/k8s-scheduler-extender-example
 COPY . .
-RUN go install -ldflags "-s -w -X main.version=$VERSION" k8s-scheduler-extender-example
+RUN go install -ldflags "-s -w -X github.com/everpeace/k8s-scheduler-extender-example/pkg/extender.version=$VERSION" .
 
 # runtime image
 FROM gcr.io/google_containers/ubuntu-slim:0.14
