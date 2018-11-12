@@ -10,7 +10,6 @@ Based on the awesome [k8s-scheduler-extender-example](https://github.com/everpea
 
 ```
 $ IMAGE=YOUR_ORG/YOUR_IMAGE:YOUR_TAG make build push
-$ docker push "${IMAGE}"
 ```
 
 ### 2. Deploy `my-scheduler` onto the `kube-system` namespace
@@ -18,7 +17,7 @@ $ docker push "${IMAGE}"
 Please see ConfigMap in [extender.yaml](extender.yaml) for scheduler policy json which includes scheduler extender config.
 
 ```
-$ 
+$ IMAGE=YOUR_ORG/YOUR_IMAGE:YOUR_TAG make deploy
 ```
 
 For ease of observation, start streaming logs from the extender:
@@ -28,6 +27,11 @@ $ kubectl -n kube-system logs deploy/my-scheduler -c my-scheduler-extender-ctr -
 [  warn ] 2018/11/07 08:41:40 main.go:84: LOG_LEVEL="" is empty or invalid, fallling back to "INFO".
 [  info ] 2018/11/07 08:41:40 main.go:98: Log level was set to INFO
 [  info ] 2018/11/07 08:41:40 main.go:116: server starting on the port :80
+```
+
+```console
+$ kubectl -n kube-system logs deploy/my-scheduler -c my-scheduler-ctr -f
+...
 ```
 
 Open up an another termianl and proceed.
@@ -47,7 +51,7 @@ I1112 08:44:16.854489       1 generic_scheduler.go:676] Host ip-10-0-1-236.ap-no
 I1112 08:44:16.854494       1 generic_scheduler.go:676] Host ip-10-0-1-59.ap-northeast-1.compute.internal => Score 98
 ...snip...
 
-$ kubectl describe pod my-scheduler-...
+$ kubectl describe pod test-deploy-...
 Name:         test-pod
 ...
 Events:
