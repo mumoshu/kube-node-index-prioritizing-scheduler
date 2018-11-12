@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+image=${IMAGE?missing IMAGE}
+
+sed 's/a\/b:c/'$(echo "${image}" | sed 's/\//\\\//')'/' deploy/kubernetes/extender.yaml > extender.yaml
+
+kubectl delete -f extender.yaml

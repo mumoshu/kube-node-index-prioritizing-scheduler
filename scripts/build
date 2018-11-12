@@ -2,4 +2,4 @@
 
 eval $(minikube docker-env)
 
-docker build . -t mumoshu/kube-n-pods-per-node-scheduler:canary
+docker build . -t ${IMAGE?missing IMAGE}

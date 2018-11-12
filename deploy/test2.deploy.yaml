@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deploy2
+  annotations:
+    com.github.mumoshu/n-pods-per-node: 2
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: test-deploy2
+  template:
+    metadata:
+      labels:
+        app: test-deploy2
+    spec:
+      schedulerName: my-scheduler
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80

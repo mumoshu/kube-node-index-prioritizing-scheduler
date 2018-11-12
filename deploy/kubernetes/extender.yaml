@@ -24,6 +24,8 @@ metadata:
   name: my-scheduler-policy
   namespace: kube-system
 data:
+ # TODO: the copies of default predicates and priorities can be omitted after https://github.com/kubernetes/kubernetes/pull/59363
+ # Also see: https://github.com/kubernetes/examples/pull/224
  policy.cfg : |
   {
     "kind" : "Policy",
@@ -43,11 +45,12 @@ data:
     ],
     "extenders" : [{
       "urlPrefix": "http://localhost/scheduler",
-      "filterVerb": "predicates/always_true",
-      "prioritizeVerb": "priorities/zero_score",
-      "preemptVerb": "preemption",
+      "filterVerb": "",
+      "prioritizeVerb": "priorities/n_pods_per_node",
+      "preemptVerb": "",
       "bindVerb": "",
       "weight": 1,
+      "ignorable": false,
       "enableHttps": false,
       "nodeCacheCapable": false
     }],
@@ -82,7 +85,7 @@ spec:
         args:
         - kube-scheduler
         - --config=/my-scheduler/config.yaml
-        - -v=4
+        - -v=5
         volumeMounts:
         - name: my-scheduler-config
           mountPath: /my-scheduler

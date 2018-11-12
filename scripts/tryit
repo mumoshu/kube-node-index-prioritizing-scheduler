@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+#kubectl run tryit --image ubuntu:xenial --restart=Never -o json --dry-run | jq '. * {spec: {schedulerName: "my-scheduler"}}' > tryit.pod.json
+#
+#if kubectl get pod tryit; then
+#  kubectl delete pod tryit
+#fi
+#
+#kubectl apply -f tryit.pod.json
+
+if kubectl get deploy test-deploy >/dev/null; then
+  kubectl delete -f deploy/test.deploy.yaml
+fi
+
+if kubectl get deploy test-deploy2 >/dev/null; then
+  kubectl delete -f deploy/test2.deploy.yaml
+fi
+
+sleep 15
+
+kubectl get po -o wide | grep test
+
+kubectl apply -f deploy/test.deploy.yaml
+kubectl apply -f deploy/test2.deploy.yaml
+
+sleep 10
+
+kubectl get po -o wide | grep test
