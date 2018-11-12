@@ -14,9 +14,39 @@ But it results in a lower availability due to that a Node with all the backend p
 
 With `kube-node-index-prioritizing-scheduler`, you can do you best to keep scheduling `N` pods per node so that `N - 1` pods failure in a single Node doesn't affect availability.
 
-## How to
+Just specify `schedulerName` to that of the scheduler, while ensuring target pods have appropriate cpu/memory request/limit so that at most `N` pods are scheduled to a Node.
 
-### 1. Buid a Docker image
+While pods are scheduled, the custom scheduler prioritizes nodes whose names are earlier in the alphabetical order.
+
+This isn't actually a bin-packing scheduling algorithm, as it doesn't prefer less loaded nodes.
+
+*Example*:
+
+Say you have 3 nodes each with 8GM of memory:
+
+`node-a`
+
+`node-b`
+
+`node-c`
+
+Scheduling 6 pods with a memory request/limit set to `3GB`, the scheduler prioritizes nodes in that order, but the request/limit prevents all the pods from being being scheduled onto the same node `node-a`.
+
+So one possbile outcome would look like:  
+
+`node-a`: `pod-a` `pod-b`
+
+`node-b`: `pod-c` `pod-d`
+
+`node-c`: `pod-e` `pod-f`
+
+This is exactly "2 pods per node" which is what this scheduler is for!
+
+Also note that, as long as you avoid using `maxSurge: 1` or greater, the "2 pods per node" rule is maintained even when you trigger a rolling-update of the deployment. 
+
+## Installation
+
+### 1. Buid a container image
 
 ```
 $ IMAGE=YOUR_ORG/YOUR_IMAGE:YOUR_TAG make build push
@@ -46,7 +76,7 @@ $ kubectl -n kube-system logs deploy/my-scheduler -c my-scheduler-ctr -f
 
 Open up an another termianl and proceed.
 
-### 3. schedule test pod
+### 3. Scheduling a test deployment
 
 You will see `test-deploy` pods will be scheduled by `my-scheduler` preferring the nodes with the names that are earlier in the alphabetical order:
 
