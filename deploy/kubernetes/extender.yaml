@@ -46,10 +46,10 @@ data:
     "extenders" : [{
       "urlPrefix": "http://localhost/scheduler",
       "filterVerb": "",
-      "prioritizeVerb": "priorities/n_pods_per_node",
+      "prioritizeVerb": "priorities/node_index",
       "preemptVerb": "",
       "bindVerb": "",
-      "weight": 1,
+      "weight": 10,
       "ignorable": false,
       "enableHttps": false,
       "nodeCacheCapable": false
@@ -85,13 +85,13 @@ spec:
         args:
         - kube-scheduler
         - --config=/my-scheduler/config.yaml
-        - -v=5
+        - -v=10
         volumeMounts:
         - name: my-scheduler-config
           mountPath: /my-scheduler
       - name: my-scheduler-extender-ctr
         image: a/b:c
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /version

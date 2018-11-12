@@ -1,23 +1,24 @@
-# k8s-scheduler-extender-example
-This is an example of [Kubernetes Scheduler Extender](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/scheduling/scheduler_extender.md)
+# kube-node-index-prioritizer-scheduler-extender
+
+This is a Kubernetes scheduler extender 
+
+Based on the awesome [k8s-scheduler-extender-example](https://github.com/everpeace/k8s-scheduler-extender-example) example by @everpeace.
 
 ## How to
 
-### 1. buid a docker image
+### 1. Buid a Docker image
 
 ```
-$ IMAGE=YOUR_ORG/YOUR_IMAGE:YOUR_TAG
-
-$ docker build . -t "${IMAGE}"
+$ IMAGE=YOUR_ORG/YOUR_IMAGE:YOUR_TAG make build push
 $ docker push "${IMAGE}"
 ```
 
-### 2. deploy `my-scheduler` in `kube-system` namespace
-please see ConfigMap in [extender.yaml](extender.yaml) for scheduler policy json which includes scheduler extender config.
+### 2. Deploy `my-scheduler` onto the `kube-system` namespace
+
+Please see ConfigMap in [extender.yaml](extender.yaml) for scheduler policy json which includes scheduler extender config.
 
 ```
-# bring up the kube-scheduler along with the extender image you've just built
-$ sed 's/a\/b:c/'$(echo "${IMAGE}" | sed 's/\//\\\//')'/' extender.yaml | kubectl apply -f -
+$ 
 ```
 
 For ease of observation, start streaming logs from the extender:
@@ -33,12 +34,20 @@ Open up an another termianl and proceed.
 
 ### 3. schedule test pod
 
-you will see `test-pod` will be scheduled by `my-scheduler`.
+You will see `test-deploy` pods will be scheduled by `my-scheduler` preferring the nodes with the names that are earlier in the alphabetical order:
 
 ```
-$ kubectl create -f test-pod.yaml
+$ make tryit
 
-$ kubectl describe pod test-pod
+$ kubectl logs -f deploy/my-scheduler -c my-scheduler-ctr
+...snip...
+I1112 08:44:16.854457       1 generic_scheduler.go:676] Host ip-10-0-1-72.ap-northeast-1.compute.internal => Score 107
+I1112 08:44:16.854477       1 generic_scheduler.go:676] Host ip-10-0-1-9.ap-northeast-1.compute.internal => Score 109
+I1112 08:44:16.854489       1 generic_scheduler.go:676] Host ip-10-0-1-236.ap-northeast-1.compute.internal => Score 74
+I1112 08:44:16.854494       1 generic_scheduler.go:676] Host ip-10-0-1-59.ap-northeast-1.compute.internal => Score 98
+...snip...
+
+$ kubectl describe pod my-scheduler-...
 Name:         test-pod
 ...
 Events:

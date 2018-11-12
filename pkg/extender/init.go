@@ -11,12 +11,9 @@ import (
 	"github.com/pkg/errors"
 	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
 	"k8s.io/api/core/v1"
-	appsv1 "k8s.io/api/apps/v1"
-	"context"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"k8s.io/apimachinery/pkg/labels"
 	"encoding/json"
-	"strconv"
+	"sort"
+	"fmt"
 )
 
 type runnable struct {
@@ -44,91 +41,46 @@ func (r runnable) Start(stop <-chan struct{}) error {
 func Init(ctx app.Context) error {
 	cologutil.Init(os.Getenv("LOG_LEVEL"))
 
-	decisions := map[string]string{}
-
 	nPodsPerNode := Prioritize{
-		Name: "n_pods_per_node",
+		Name: "node_index",
 		Func: func(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
-			ctx.Log.Info("scoring pod \"%s\"", pod.Name)
+			ctx.Log.Info(fmt.Sprintf("scoring pod \"%s\"", pod.Name))
 
-			rsKey := client.ObjectKey{pod.Namespace, pod.OwnerReferences[0].Name}
-			rs := appsv1.ReplicaSet{}
-			err := ctx.Mgr.GetClient().Get(context.TODO(), rsKey, &rs)
-			if err != nil {
-				return nil, errors.Wrap(err, "Get service from kubernetes cluster error")
-			}
+			sorted := nodes
 
-			d := appsv1.Deployment{}
-			dKey := client.ObjectKey{pod.Namespace, rs.OwnerReferences[0].Name}
-			if err := ctx.Mgr.GetClient().Get(context.TODO(), dKey, &d); err != nil {
-				return nil, errors.Wrap(err, "failed getting deployment")
-			}
+			sort.Slice(sorted, func(i, j int) bool {
+				return nodes[i].Name > nodes[j].Name
+			})
 
-			numStr := d.ObjectMeta.Annotations["com.github.mumoshu/n-pods-per-node"]
-			desiredNum := ctx.Config.DesiredPodsPerNode
+			scores := map[string]int{}
 
-			if numStr != "" {
-				numFromAnnotation, err := strconv.Atoi(numStr)
-				if err != nil {
-					ctx.Log.Error(err, "conversion failed. falling back to the default value", "desired", desiredNum)
-					//return nil, errors.Wrap(err, "failed getting desired pod count")
-				} else {
-					ctx.Log.Error(err, "conversion succeeded. using the specified value", "desired", numFromAnnotation)
-					desiredNum = numFromAnnotation
+			var priorityList schedulerapi.HostPriorityList
+			priorityList = make([]schedulerapi.HostPriority, len(nodes))
+			max := 10
+			for i, n := range sorted {
+				scores[n.Name] = max - i
+				if scores[n.Name] < 0 {
+					scores[n.Name] = 0
+				}
+
+				priorityList[i] = schedulerapi.HostPriority{
+					Host:  n.Name,
+					Score: scores[n.Name],
 				}
 			}
 
-			set := labels.Set(rs.Spec.Selector.MatchLabels)
-			listOpts := &client.ListOptions{
-				LabelSelector: set.AsSelector(),
-				Namespace: pod.Namespace,
-			}
-			pods := v1.PodList{}
-			if listErr := ctx.Mgr.GetClient().List(context.TODO(), listOpts, &pods); listErr != nil {
-				return nil, errors.Wrap(err, "error listing pods")
-			}
-			numScheduledPods := map[string]int{}
-			for _, pod := range pods.Items {
-				nodeName := pod.Spec.NodeName
-				n, ok := numScheduledPods[nodeName]
-				if !ok {
-					numScheduledPods[nodeName] = 1
-				} else {
-					numScheduledPods[nodeName] = n + 1
-				}
-			}
-
-			str, err := json.Marshal(numScheduledPods)
+			str, err := json.Marshal(priorityList)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed serializing pod counting result")
 			}
-			ctx.Log.Info("counted pods per nodes", "result", string(str))
-			var priorityList schedulerapi.HostPriorityList
-			priorityList = make([]schedulerapi.HostPriority, len(nodes))
-			for i, node := range nodes {
-				num, ok := numScheduledPods[node.Name]
-				if !ok {
-					num = 0
-				} else if num >= desiredNum {
-					// Provide a lower priority when the desired pod count is already fulfilled
-					num = -1
-				}
-				score := num * 1000
-				if score < 0 {
-					score = 0
-				}
-				ctx.Log.Info("calculated score", "score", score, "num", num, "max", desiredNum, "node", node.Name)
-				priorityList[i] = schedulerapi.HostPriority{
-					Host:  node.Name,
-					Score: score,
-				}
-			}
+			ctx.Log.Info("host priority list produced", "result", string(str))
+
 			return &priorityList, nil
 		},
 	}
 
-	predicates := []Predicate{TruePredicate}
-	priorities := []Prioritize{ZeroPriority, nPodsPerNode}
+	predicates := []Predicate{}
+	priorities := []Prioritize{nPodsPerNode}
 
 	handler := NewHandler(predicates, priorities)
 

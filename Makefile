@@ -13,6 +13,7 @@ deploy:
 	@IMAGE=$(IMAGE) scripts/deploy
 
 .PHONY: undeploy
+undeploy:
 	@IMAGE=$(IMAGE) scripts/undeploy
 
 .PHONY: tryit

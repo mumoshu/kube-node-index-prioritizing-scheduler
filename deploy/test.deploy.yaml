@@ -2,10 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: test-deploy
-  annotations:
-    com.github.mumoshu/n-pods-per-node: 3
 spec:
-  replicas: 3
+  replicas: 4
   selector:
     matchLabels:
       app: test-deploy
@@ -20,3 +18,8 @@ spec:
         image: nginx
         ports:
         - containerPort: 80
+        resources:
+          limits:
+            memory: "3000Mi"
+          requests:
+            memory: "3000Mi"
