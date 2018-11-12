@@ -1,6 +1,6 @@
-# kube-node-index-prioritizer-scheduler-extender
+# kube-node-index-prioritizing-scheduler
 
-This is a Kubernetes scheduler extender 
+A Kubernetes scheduler that uses sorted nodes' positions as priorities. Use in combination with resource request/limit to implement low-latency highly available front proxy cluster.
 
 Based on the awesome [k8s-scheduler-extender-example](https://github.com/everpeace/k8s-scheduler-extender-example) example by @everpeace.
 
