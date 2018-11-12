@@ -4,6 +4,16 @@ A Kubernetes scheduler that uses sorted nodes' positions as priorities. Use in c
 
 Based on the awesome [k8s-scheduler-extender-example](https://github.com/everpeace/k8s-scheduler-extender-example) example by @everpeace.
 
+## Use-cases
+
+1. Accelerate `Envoy` front proxies or Istio ingress gateways. Or more generally, use with Kubernetes `Service` with `type: NodePort` and `externalTrafficPolicy: Local`.
+
+`externalTrafficPolicy: Local` eliminates the extra network hop between the NodePort and the service-backend pods.
+
+But it results in a lower availability due to that a Node with all the backend pods failed results in a complete failure of the NodePort.
+
+With `kube-node-index-prioritizing-scheduler`, you can do you best to keep scheduling `N` pods per node so that `N - 1` pods failure in a single Node doesn't affect availability.
+
 ## How to
 
 ### 1. Buid a Docker image
